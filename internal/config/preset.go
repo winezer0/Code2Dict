@@ -3,17 +3,17 @@ package config
 // PresetConfig 预设配置结构
 type PresetConfig struct {
 	Description string   `yaml:"description"`
-	Allowed     []string `yaml:"allowed"`
-	Removed     []string `yaml:"removed"`
+	Include     []string `yaml:"include"`
+	Exclude     []string `yaml:"exclude"`
 	Ignored     []string `yaml:"ignored"`
 }
 
 // NewPresetConfig  带参数的构造函数
-func NewPresetConfig(description string, allowed, removed, ignored []string) *PresetConfig {
+func NewPresetConfig(description string, include, exclude, ignored []string) *PresetConfig {
 	return &PresetConfig{
 		Description: description,
-		Allowed:     copyStrSlice(allowed),
-		Removed:     copyStrSlice(removed),
+		Include:     copyStrSlice(include),
+		Exclude:     copyStrSlice(exclude),
 		Ignored:     copyStrSlice(ignored),
 	}
 }

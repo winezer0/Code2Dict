@@ -32,7 +32,7 @@ type Options struct {
 	PresetConfig string `short:"c" long:"preset_config" description:"自定义 YAML 配置文件路径" default:"code2dict.yaml"`
 	Output       string `short:"o" long:"output" description:"输出字典文件路径"`
 
-	EnWhite bool `short:"w" long:"en_white" description:"白名单模式：仅保留预设中 allowed 指定的文件后缀类型"`
+	EnWhite bool `short:"w" long:"en_white" description:"白名单模式：仅保留预设中 include 指定的文件后缀类型"`
 	EnCover bool `short:"W" long:"en_cover" description:"使用覆盖写入模式到结果文件"`
 
 	// 统计信息显示
@@ -114,7 +114,7 @@ func main() {
 
 		// 创建字典生成器并运行
 		if preset != nil {
-			if (opts.EnWhite && len(preset.Allowed) > 0) || (!opts.EnWhite && len(preset.Allowed)+len(preset.Removed)+len(preset.Ignored) > 0) {
+			if (opts.EnWhite && len(preset.Include) > 0) || (!opts.EnWhite && len(preset.Include)+len(preset.Exclude)+len(preset.Ignored) > 0) {
 				dictGenerator := generate.NewDictGenerator(opts.Path, *preset, opts.EnWhite, opts.EnCover, outputFile)
 				if err := dictGenerator.RunGenerate(); err != nil {
 					logging.Fatalf("生成文件路径字典失败: %v", err)

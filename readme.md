@@ -35,7 +35,7 @@ Code2Dict [OPTIONS]
 | `-P`, `--preset` | 使用预设规则或自定义规则 |
 | `-c`, `--preset_config` | 自定义YAML配置文件路径 |
 | `-o`, `--output` | 输出字典文件路径，默认根据路径自动生成 |
-| `-w`, `--en_white` | 白名单模式：仅生成预设中allowed指定的文件后缀类型 |
+| `-w`, `--en_white` | 白名单模式：仅生成预设中include指定的文件后缀类型 |
 | `-v`, `--version` | 输出版本信息 |
 
 ### 使用示例
@@ -92,11 +92,11 @@ Code2Dict [OPTIONS]
 presets:
   mypreset:
     description: "我的自定义配置"
-    allowed:
+    include:
       - php
       - jsp
       - asp
-    removed:
+    exclude:
       - txt
       - log
       - tmp
@@ -108,8 +108,8 @@ presets:
 ### 配置字段说明
 
 - `description`: 配置描述信息
-- `allowed`: 白名单模式下保留的文件后缀列表
-- `removed`: 黑名单模式下排除的文件后缀列表
+- `include`: 白名单模式下保留的文件后缀列表
+- `exclude`: 黑名单模式下排除的文件后缀列表
 - `ignored`: 需要排除的目录名称列表
 
 ## 输出格式
@@ -124,8 +124,8 @@ presets:
 
 ## 注意事项
 
-1. 在白名单模式下(`-w`)，只有在[allowed](file:///C:/Users/WINDOWS/Desktop/Deving/Code2FileDict/internal/embeds/code2dict.yaml#L80-L80)列表中的文件后缀会被生成
-2. 在黑名单模式下(默认)，在[removed](file:///C:/Users/WINDOWS/Desktop/Deving/Code2FileDict/internal/embeds/code2dict.yaml#L3-L79)列表中的文件后缀会被排除
+1. 在白名单模式下(`-w`)，只有在[include](file:///C:/Users/WINDOWS/Desktop/Deving/Code2FileDict/internal/embeds/code2dict.yaml#L80-L80)列表中的文件后缀会被生成
+2. 在黑名单模式下(默认)，在[exclude](file:///C:/Users/WINDOWS/Desktop/Deving/Code2FileDict/internal/embeds/code2dict.yaml#L3-L79)列表中的文件后缀会被排除
 3. 路径会以标准的URL格式输出，以`/`开头
 
 ## 许可证
