@@ -94,7 +94,11 @@ func printStats(statsList []*FileStats, path string) {
 	fmt.Printf("%-20s %-10s\n", "Suffix", "Counts")
 	fmt.Printf("%-20s %-10s\n", "------", "------")
 
+	// 提取所有后缀，构建列表
+	var extensions []string
 	for _, stat := range statsList {
+		extensions = append(extensions, stat.Extension)
 		fmt.Printf("%-20s %-10d\n", stat.Extension, stat.Count)
 	}
+	fmt.Printf("\n所有后缀 (%d): %s\n", len(extensions), strings.Join(extensions, ","))
 }

@@ -21,7 +21,7 @@ const (
 	AppName      = "Code2Dict"
 	AppShortDesc = "ISEC 代码文件路径字典生成工具"
 	AppLongDesc  = "ISEC 代码文件路径字典生成工具, 生成指定目录中文件的URL路径字典"
-	AppVersion   = "0.0.1"
+	AppVersion   = "0.0.2"
 	BuildDate    = "2025-10-28"
 )
 
@@ -31,7 +31,9 @@ type Options struct {
 	Preset       string `short:"P" long:"preset" description:"使用预设规则(默认common) 或 ext/dir:逗号分割的后缀列表 (如ext: exe,txt)"`
 	PresetConfig string `short:"c" long:"preset_config" description:"自定义 YAML 配置文件路径" default:"code2dict.yaml"`
 	Output       string `short:"o" long:"output" description:"输出字典文件路径"`
-	EnWhite      bool   `short:"w" long:"en_white" description:"白名单模式：仅保留预设中 allowed 指定的文件后缀类型"`
+
+	EnWhite bool `short:"w" long:"en_white" description:"白名单模式：仅保留预设中 allowed 指定的文件后缀类型"`
+	EnCover bool `short:"W" long:"en_cover" description:"使用覆盖写入模式到结果文件"`
 
 	// 统计信息显示
 	StatsExt bool `short:"s" long:"stats_ext" description:"启用统计模式：显示目录下(后缀类型) 数量分布"`
@@ -113,7 +115,7 @@ func main() {
 		// 创建字典生成器并运行
 		if preset != nil {
 			if (opts.EnWhite && len(preset.Allowed) > 0) || (!opts.EnWhite && len(preset.Allowed)+len(preset.Removed)+len(preset.Ignored) > 0) {
-				dictGenerator := generate.NewDictGenerator(opts.Path, *preset, opts.EnWhite, outputFile)
+				dictGenerator := generate.NewDictGenerator(opts.Path, *preset, opts.EnWhite, opts.EnCover, outputFile)
 				if err := dictGenerator.RunGenerate(); err != nil {
 					logging.Fatalf("生成文件路径字典失败: %v", err)
 				}

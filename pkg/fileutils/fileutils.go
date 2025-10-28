@@ -54,13 +54,13 @@ func WriteAny(filePath string, data interface{}) error {
 }
 
 // WritePathsToFile 将路径列表写入文件，mode 以 'a' 开头表示追加，其余为覆盖
-func WritePathsToFile(filepath string, paths []string, mode string) error {
+func WritePathsToFile(filepath string, paths []string, cover bool) error {
 	// 确定打开模式
 	flag := os.O_CREATE | os.O_WRONLY
-	if strings.HasPrefix(mode, "a") {
-		flag |= os.O_APPEND
+	if cover {
+		flag |= os.O_TRUNC // 覆盖写入
 	} else {
-		flag |= os.O_TRUNC // "w" 或默认行为：覆盖
+		flag |= os.O_APPEND // 追加写入
 	}
 
 	if len(paths) == 0 {

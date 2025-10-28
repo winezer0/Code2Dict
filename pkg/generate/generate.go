@@ -18,19 +18,21 @@ type DictGenerator struct {
 	Path    string   // 根目录路径
 	Allowed []string // 白名单扩展名列表
 	Removed []string // 移除扩展名列表（兼容旧参数）
-	Rmdirs  []string // 待删除目录名列表（仅匹配目录名，不限制层级）
+	Ignored []string // 待删除目录名列表（仅匹配目录名，不限制层级）
 	EnWhite bool     // 白名单模式（保留Allowed列表，删除其他）
+	EnCover bool     // 覆盖写入模式，默认为追加写入
 	Output  string   // 输出文件路径
 }
 
 // NewDictGenerator 创建字典生成器实例
-func NewDictGenerator(path string, preset config.PresetConfig, enWhite bool, output string) *DictGenerator {
+func NewDictGenerator(path string, preset config.PresetConfig, enWhite, enCover bool, output string) *DictGenerator {
 	return &DictGenerator{
 		Path:    path,
 		Allowed: preset.Allowed,
 		Removed: preset.Removed,
-		Rmdirs:  preset.Ignored,
+		Ignored: preset.Ignored,
 		EnWhite: enWhite,
+		EnCover: enCover,
 		Output:  output,
 	}
 }
@@ -46,7 +48,7 @@ func (g *DictGenerator) RunGenerate() error {
 		}
 	} else {
 		// 普通模式处理（使用Removed列表）
-		if len(g.Removed) == 0 && len(g.Rmdirs) == 0 {
+		if len(g.Removed) == 0 && len(g.Ignored) == 0 {
 			return fmt.Errorf("黑名单模式未配置 removed 列表或 ignored 列表，无法继续处理")
 		}
 	}
@@ -70,7 +72,7 @@ func (g *DictGenerator) RunGenerate() error {
 	// 预处理配置参数（统一格式）
 	allowed := preprocessExtensions(g.Allowed)
 	removed := preprocessExtensions(g.Removed)
-	ignored := preprocessDirNames(g.Rmdirs)
+	ignored := preprocessDirNames(g.Ignored)
 
 	// 验证根路径有效性
 	rootAbsPath, err := filepath.Abs(g.Path)
@@ -123,7 +125,7 @@ func (g *DictGenerator) RunGenerate() error {
 	}
 
 	// 将所有路径写入文件
-	if err := fileutils.WritePathsToFile(g.Output, paths, "a+"); err != nil {
+	if err := fileutils.WritePathsToFile(g.Output, paths, g.EnCover); err != nil {
 		return fmt.Errorf("写入文件失败: %v", err)
 	}
 
@@ -131,7 +133,7 @@ func (g *DictGenerator) RunGenerate() error {
 	return nil
 }
 
-// shouldSkipDir 检查是否应该跳过目录（当目录名匹配Rmdirs时）
+// shouldSkipDir 检查是否应该跳过目录（当目录名匹配 Ignored dirs时）
 func (g *DictGenerator) shouldSkipDir(path string, ignored []string) bool {
 	currDirName := strings.ToLower(filepath.Base(path))
 
