@@ -1,6 +1,6 @@
 presets:
   common:
-    description: "常见的清理文档"
+    description: "常见的代码文件规则"
     include:
     exclude:
       # 图片格式（原有+补充）

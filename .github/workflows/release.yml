@@ -57,6 +57,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          go mod tidy
           if [ "${{ runner.os }}" == "macOS" ]; then
             export GOARCH=arm64
           fi

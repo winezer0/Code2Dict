@@ -1,9 +1,9 @@
 package generate
 
 import (
+	"bufio"
 	"code2dict/internal/config"
-	"code2dict/pkg/fileutils"
-	"code2dict/pkg/logging"
+
 	"context"
 	"fmt"
 	"os"
@@ -11,29 +11,31 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/winezer0/xutils/logging"
 )
 
 // DictGenerator 字典生成器选项
 type DictGenerator struct {
-	Path    string   // 根目录路径
-	Include []string // 白名单扩展名列表
-	Exclude []string // 移除扩展名列表（兼容旧参数）
-	Ignored []string // 待删除目录名列表（仅匹配目录名，不限制层级）
-	EnWhite bool     // 白名单模式（保留Include列表，删除其他）
-	EnCover bool     // 覆盖写入模式，默认为追加写入
-	Output  string   // 输出文件路径
+	Path      string   // 根目录路径
+	Include   []string // 白名单扩展名列表
+	Exclude   []string // 移除扩展名列表（兼容旧参数）
+	Ignored   []string // 待删除目录名列表（仅匹配目录名，不限制层级）
+	WhiteMode bool     // 白名单模式（保留Include列表，删除其他）
+	OverMode  bool     // 覆盖写入模式，默认为追加写入
+	Output    string   // 输出文件路径
 }
 
 // NewDictGenerator 创建字典生成器实例
-func NewDictGenerator(path string, preset config.PresetConfig, enWhite, enCover bool, output string) *DictGenerator {
+func NewDictGenerator(path, output string, preset config.PresetConfig, whiteMode, OverMode bool) *DictGenerator {
 	return &DictGenerator{
-		Path:    path,
-		Include: preset.Include,
-		Exclude: preset.Exclude,
-		Ignored: preset.Ignored,
-		EnWhite: enWhite,
-		EnCover: enCover,
-		Output:  output,
+		Path:      path,
+		Output:    output,
+		Include:   preset.Include,
+		Exclude:   preset.Exclude,
+		Ignored:   preset.Ignored,
+		WhiteMode: whiteMode,
+		OverMode:  OverMode,
 	}
 }
 
@@ -41,7 +43,7 @@ func NewDictGenerator(path string, preset config.PresetConfig, enWhite, enCover 
 func (g *DictGenerator) RunGenerate() error {
 
 	// 提前检查配置是否有效，避免进行无效操作
-	if g.EnWhite {
+	if g.WhiteMode {
 		// 白名单模式处理 （使用include列表）
 		if len(g.Include) == 0 {
 			return fmt.Errorf("白名单模式未配置include列表，无法继续处理")
@@ -125,7 +127,7 @@ func (g *DictGenerator) RunGenerate() error {
 	}
 
 	// 将所有路径写入文件
-	if err := fileutils.WritePathsToFile(g.Output, paths, g.EnCover); err != nil {
+	if err := WritePathsToFile(g.Output, paths, g.OverMode); err != nil {
 		return fmt.Errorf("写入文件失败: %v", err)
 	}
 
@@ -149,7 +151,7 @@ func (g *DictGenerator) shouldSkipDir(path string, ignored []string) bool {
 func (g *DictGenerator) handleFiles(path string, includeExts, excludeExts []string, rootPath string, paths *[]string) {
 	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
 
-	if g.EnWhite {
+	if g.WhiteMode {
 		if isExtensionInList(ext, includeExts) {
 			g.generatePath(path, rootPath, paths)
 		}
@@ -174,4 +176,37 @@ func (g *DictGenerator) generatePath(path string, rootPath string, paths *[]stri
 
 	// 添加到路径列表
 	*paths = append(*paths, urlPath)
+}
+
+// WritePathsToFile 将路径列表写入文件，mode 以 'a' 开头表示追加，其余为覆盖
+func WritePathsToFile(filepath string, paths []string, cover bool) error {
+	// 确定打开模式
+	flag := os.O_CREATE | os.O_WRONLY
+	if cover {
+		flag |= os.O_TRUNC // 覆盖写入
+	} else {
+		flag |= os.O_APPEND // 追加写入
+	}
+
+	if len(paths) == 0 {
+		return fmt.Errorf("paths is empty")
+	}
+
+	// 打开文件
+	file, err := os.OpenFile(filepath, flag, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open the file: %v", err)
+	}
+	defer file.Close()
+
+	// 使用缓冲写入提升性能（简洁引入 bufio）
+	writer := bufio.NewWriter(file)
+	for _, path := range paths {
+		if _, err := writer.WriteString(strings.TrimSpace(path) + "\n"); err != nil {
+			return fmt.Errorf("failed to write to path: %s - %v", path, err)
+		}
+	}
+
+	// 刷新缓冲区
+	return writer.Flush()
 }

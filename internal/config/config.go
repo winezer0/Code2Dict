@@ -1,9 +1,14 @@
 package config
 
 import (
-	"gopkg.in/yaml.v3"
+	"code2dict/internal/embeds"
+	"fmt"
+
 	"os"
 	"path/filepath"
+
+	"github.com/winezer0/xutils/logging"
+	"gopkg.in/yaml.v3"
 )
 
 // Config 配置文件结构
@@ -12,29 +17,30 @@ type Config struct {
 }
 
 // LoadConfig 加载配置文件
-func LoadConfig(configPath string) (*Config, error) {
-	if configPath == "" {
-		// 默认查找顺序
-		configPaths := []string{
-			"code2dict.yaml",
-			filepath.Join(os.Getenv("HOME"), ".config", "code2dict.yaml"),
-		}
+// 当用户没有指定配置文件路径时, 先从当前目录和用户目录/.config查找 <AppName>.yaml,
+// 找不到时 或者加载错误时 使用内嵌的配置文件
+func LoadConfig(cfgPath string, appName string) (*Config, error) {
+	var data []byte
+	var err error
 
-		for _, path := range configPaths {
-			if _, err := os.Stat(path); err == nil {
-				configPath = path
-				break
-			}
+	if cfgPath == "" {
+		// 当用户没有指定配置文件路径时, 先从当前目录和用户目录/.config查找 <AppName>.yaml,
+		// 找不到时 或者加载错误时 使用内嵌的配置文件
+		defaultConfig := appName + ".yaml"
+		cfgPath = findConfigPath(defaultConfig)
+		if cfgPath != "" {
+			data, err = os.ReadFile(cfgPath)
+			logging.Errorf("read found config %s error: %v", cfgPath, err)
+			data = []byte(GetDefaultConfig())
+		} else {
+			data = []byte(GetDefaultConfig())
 		}
-
-		if configPath == "" {
-			return &Config{Presets: make(map[string]PresetConfig)}, nil
+	} else {
+		// 如果已指定配置文件 就从指定的配置中读取
+		data, err = os.ReadFile(cfgPath)
+		if err != nil {
+			return nil, err
 		}
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, err
 	}
 
 	var config Config
@@ -46,8 +52,49 @@ func LoadConfig(configPath string) (*Config, error) {
 	return &config, nil
 }
 
+func findConfigPath(configName string) string {
+	configPath := ""
+	configPaths := []string{
+		configName,
+		filepath.Join(os.Getenv("HOME"), ".config", configName),
+	}
+
+	for _, path := range configPaths {
+		if _, err := os.Stat(path); err == nil {
+			configPath = path
+			break
+		}
+	}
+	return configPath
+}
+
 // GetPreset 获取预设配置
 func (c *Config) GetPreset(name string) (*PresetConfig, bool) {
 	preset, exists := c.Presets[name]
 	return &preset, exists
+}
+
+// GetDefaultConfig 获取内置默认配置文件内容（从嵌入文件获取）
+func GetDefaultConfig() string {
+	return embeds.GetConfig()
+}
+
+// GenDefaultConfig 生成默认配置文件到指定路径
+func GenDefaultConfig(configPath string) error {
+	defaultConfig := GetDefaultConfig()
+	return os.WriteFile(configPath, []byte(defaultConfig), 0644)
+}
+
+// PrintPresetSummary 打印预设名称和描述
+func PrintPresetSummary(cfg *Config) {
+	fmt.Println("preset list:")
+	fmt.Println("--------------------------------")
+	// 遍历 map
+	for name, preset := range cfg.Presets {
+		// name 就是 map 的键（预设名称）
+		// preset 就是 PresetConfig 结构体值
+		fmt.Printf("- name: %s\n", name)
+		fmt.Printf("  desc: %s\n", preset.Description)
+		fmt.Println("--------------------------------")
+	}
 }
