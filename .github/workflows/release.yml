@@ -61,7 +61,7 @@ jobs:
           if [ "${{ runner.os }}" == "macOS" ]; then
             export GOARCH=arm64
           fi
-          go build -v -trimpath -ldflags "-s -w" -o ${{ matrix.asset_name }} ./cmd/code2dict
+          CGO_ENABLED=0 go build -v -trimpath -ldflags "-s -w" -o ${{ matrix.asset_name }} ./cmd/code2dict
 
       # 新增：压缩二进制文件为 tar.gz
       - name: Compress binary with tar.gz
