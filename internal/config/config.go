@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/winezer0/xutils/logging"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,8 +29,10 @@ func LoadConfig(cfgPath string, appName string) (*Config, error) {
 		cfgPath = findConfigPath(defaultConfig)
 		if cfgPath != "" {
 			data, err = os.ReadFile(cfgPath)
-			logging.Errorf("read found config %s error: %v", cfgPath, err)
-			data = []byte(GetDefaultConfig())
+			if err != nil {
+				fmt.Errorf("read found config %s error: %v", cfgPath, err)
+				data = []byte(GetDefaultConfig())
+			}
 		} else {
 			data = []byte(GetDefaultConfig())
 		}
